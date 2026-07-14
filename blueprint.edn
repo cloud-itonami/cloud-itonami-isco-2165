@@ -1,0 +1,11 @@
+[{:itonami.blueprint/social-impact [:geodetic-accuracy :cartographic-integrity :field-safety :boundary-clarity :site-documentation]
+  :itonami.blueprint/domain :surveying/cartography
+  :itonami.blueprint/required-technologies [:robotics :identity :survey-forms :gis :dmn :audit-ledger]
+  :itonami.blueprint/isco-08 "2165"
+  :itonami.blueprint/name "Cartographers and Surveyors Support"
+  :itonami.blueprint/governor :cartography-governor
+  :itonami.blueprint/robotics true
+  :db/id -1
+  :itonami.blueprint/status :public-oss
+  :itonami.blueprint/id "cloud-itonami-isco-2165"
+  :itonami.blueprint/license "AGPL-3.0-or-later"}]
