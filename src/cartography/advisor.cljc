@@ -43,5 +43,5 @@
          :confidence confidence
          :payload {:site-id site-id
                    :op op
-                   :timestamp (System/currentTimeMillis)
+                   :timestamp #?(:clj (System/currentTimeMillis) :cljs (.getTime (js/Date.)))
                    :data-source :field-survey}}))))
