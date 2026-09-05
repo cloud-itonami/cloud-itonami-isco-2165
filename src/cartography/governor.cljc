@@ -8,53 +8,69 @@
   Actors section).
 
   `check` is a pure function of (request, context, proposal, store) ->
-  verdict; it never mutates the store. The StateGraph's `:decide` node
-  routes on the verdict:
+  verdict; it never mutates the store. `cartography.phase/of-verdict` routes
+  on the result:
     :hard? true                → :hold  (irreversible, no write)
     :escalate? true            → :request-approval (interrupt-before)
     otherwise                  → :commit
 
   HARD invariants (:hard? true, ALWAYS :hold, never overridable):
-    1. site/project provenance — the request's site/project must be registered.
-    2. no-actuation         — proposal :effect must be :propose.
-    3. no-legal-authority   — any attempt to certify a legal survey, issue
-       a licensed surveyor's sign-off, or bind the surveying authority to
-       a boundary determination is a permanent block (those remain the
-       professional licensed surveyor's exclusive responsibility).
+    1. request well-formedness — the request must name a site
+       (`cartography.facts/request-violations`).
+    2. site/project provenance — the site must be registered AND the
+       registered record must identify itself
+       (`cartography.facts/site-record-violations`). Checking only that the
+       store returned non-nil admitted a blank registration; see facts.
+    3. vocabulary — the proposal's `:op` must be declared in
+       `cartography.operation`. This is an ALLOWLIST. Before it, the governor
+       named three forbidden ops and admitted every other op in the world.
+    4. no-legal-authority — ops reserved to the licensed surveyor are a
+       permanent block, never an escalation.
+    5. no-actuation — proposal :effect must be :propose.
+    6. envelope well-formedness — `cartography.facts/proposal-violations`.
+
   ESCALATION invariants (:escalate? true, ALWAYS human sign-off, per the
   README robotics-premise: boundary discrepancies and low confidence always
   require human surveyor sign-off):
-    4. :op :flag-boundary-discrepancy (always escalates).
-    5. low confidence (< `confidence-floor`)."
-  (:require [cartography.store :as store]))
+    7. the operation declares `:escalates? true`
+       (`cartography.operation/escalates?`).
+    8. low confidence (< `confidence-floor`).
+
+  Hard is checked before escalation, and the two are disjoint in the verdict:
+  a proposal that is both hard-blocked and low-confidence holds. Escalating it
+  would put a question to a human that they have no authority to answer yes
+  to."
+  (:require [cartography.store :as store]
+            [cartography.facts :as facts]
+            [cartography.operation :as op]))
 
 (def confidence-floor 0.6)
-(def ^:private escalating-ops #{:flag-boundary-discrepancy})
 
-(defn- hard-violations [{:keys [proposal]} site-record]
-  (cond-> []
-    (nil? site-record)
-    (conj {:rule :no-site :detail "未登録 site/project"})
-
-    (not= :propose (:effect proposal))
-    (conj {:rule :no-actuation :detail "effect は :propose のみ許可（直接書込禁止）"})
-
-    (or (= :certify-legal-survey (:op proposal))
-        (= :issue-surveyor-sign-off (:op proposal))
-        (= :bind-boundary-determination (:op proposal)))
-    (conj {:rule :no-legal-authority :detail "legal survey certification, licensed surveyor sign-off, and binding boundary determinations are the professional surveyor's exclusive responsibility"})))
+(defn- hard-violations
+  [request proposal site-record]
+  (vec (concat
+        (facts/request-violations request)
+        ;; The store returning nothing, and the store returning something that
+        ;; does not identify a site, are both provenance failures.
+        (if (nil? site-record)
+          [{:rule :no-site :detail "未登録 site/project"}]
+          (facts/site-record-violations site-record))
+        (facts/vocabulary-violations proposal)
+        (when (not= :propose (:effect proposal))
+          [{:rule :no-actuation :detail "effect は :propose のみ許可（直接書込禁止）"}])
+        (facts/proposal-violations proposal))))
 
 (defn check
   "Assess a proposal against `request`/`context`/`proposal` and a
   `store` implementing `cartography.store/Store`. Returns
   `{:ok? bool :violations [...] :confidence n :hard? bool :escalate? bool}`."
   [request context proposal store]
-  (let [site-record (store/site store (:site-id request))
-        hard (hard-violations {:proposal proposal} site-record)
+  (let [site-record (when (map? request) (store/site store (:site-id request)))
+        hard (hard-violations request proposal site-record)
         hard? (boolean (seq hard))
         conf (or (:confidence proposal) 0.0)
-        low? (< conf confidence-floor)
-        escalating-op? (contains? escalating-ops (:op proposal))]
+        low? (or (not (number? conf)) (< conf confidence-floor))
+        escalating-op? (op/escalates? (:op proposal))]
     {:ok? (and (not hard?) (not low?) (not escalating-op?))
      :violations hard
      :confidence conf

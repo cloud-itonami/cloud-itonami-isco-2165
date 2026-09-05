@@ -1,7 +1,17 @@
 (ns cartography.store
   "CartographyStore — in-memory append-only ledger and record storage for
   the ISCO-08 2165 cartographer and surveyor support actor. Handles site
-  registration, proposal records, and immutable audit trail.")
+  registration, proposal records, and immutable audit trail.
+
+  The ledger is chained: `append-ledger!` routes every entry through
+  `cartography.ledger/append`, which stamps `:ledger/seq`, `:ledger/prev` and
+  `:ledger/hash`. That is what makes 'append-only' a property of the artifact
+  rather than of the code path that produced it — see `cartography.ledger`.
+  The protocol signature is unchanged; callers still pass a plain map."
+  ;; alias is `led`, not `ledger`: this namespace also defines a protocol
+  ;; method named `ledger`, and shadowing the two names in one file is
+  ;; needless work for the next reader.
+  (:require [cartography.ledger :as led]))
 
 (defprotocol Store
   (site [this site-id]
@@ -41,7 +51,7 @@
         (swap! _records conj record))
 
       (append-ledger! [this entry]
-        (swap! _ledger conj entry))
+        (swap! _ledger led/append entry))
 
       (records-of [this site-id]
         (filter #(= (:site-id %) site-id) @_records))
