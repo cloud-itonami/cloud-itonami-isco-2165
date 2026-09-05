@@ -22,6 +22,8 @@
             [langgraph.checkpoint :as cp]
             [cartography.advisor :as advisor]
             [cartography.governor :as governor]
+            [cartography.ledger :as led]
+            [cartography.phase :as phase]
             [cartography.store :as store]))
 
 (defn build-graph
@@ -52,25 +54,35 @@
                      (let [v (governor/check request context proposal store)]
                        {:verdict v
                         :audit [{:node :govern :verdict v}]})))
+      ;; Routing lives in `cartography.phase`, not inline here, so the rule
+      ;; that decides whether a proposal is written can be tested without
+      ;; building a graph — and so a ledger entry can name the phase it took.
       (g/add-node :decide
                    (fn [{:keys [verdict]}]
-                     {:disposition (cond
-                                     (:hard? verdict) :hold
-                                     (:escalate? verdict) :request-approval
-                                     :else :commit)}))
+                     {:disposition (phase/of-verdict verdict)}))
       (g/add-node :request-approval (fn [s] s))
+      ;; The commit node is reached from two places: directly (the governor
+      ;; admitted the proposal) and from `:request-approval` after a human
+      ;; resumed the thread. Those are different events and the ledger has to
+      ;; be able to tell them apart — measured on the pre-change tree, it could
+      ;; not, so an audit could not show that the README robotics premise
+      ;; ("binding surveyor authority remains the professional's sole
+      ;; responsibility") had actually been honoured on any given write.
       (g/add-node :commit
-                   (fn [{:keys [request proposal]}]
+                   (fn [{:keys [request proposal disposition]}]
                      (let [record {:site-id (:site-id request)
                                     :op (:op proposal)
-                                    :payload proposal}]
+                                    :payload proposal}
+                           approved-by (if (phase/approved-commit? disposition)
+                                         :human
+                                         :actor)]
                        (store/commit-record! store record)
-                       (store/append-ledger! store {:disposition :commit :record record})
+                       (store/append-ledger! store (led/commit-entry record approved-by))
                        {:record record
-                        :audit [{:node :commit :record record}]})))
+                        :audit [{:node :commit :record record :approved-by approved-by}]})))
       (g/add-node :hold
                    (fn [{:keys [verdict]}]
-                     (store/append-ledger! store {:disposition :hold :verdict verdict})
+                     (store/append-ledger! store (led/hold-entry verdict))
                      {:audit [{:node :hold :verdict verdict}]}))
       (g/set-entry-point :intake)
       (g/add-edge :intake :advise)
