@@ -19,7 +19,7 @@
   Every function here returns a vector of `{:rule .. :detail ..}` maps —
   empty means well-formed — so violations compose with the Governor's own
   rules without a second shape."
-  (:require [clojure.string :as str]
+  (:require [kotoba.lang.text :as str]
             [cartography.operation :as op]))
 
 (defn- blank?

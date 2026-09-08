@@ -22,7 +22,7 @@
   automatically produced two `{:disposition :commit ...}` entries with no
   field distinguishing them. `entry` therefore takes the deciding phase and
   the approval provenance as part of the record, not as an afterthought."
-  (:require [clojure.string :as str]))
+  (:require [kotoba.lang.text :as str]))
 
 (def ^:private modulus 2147483647)
 
