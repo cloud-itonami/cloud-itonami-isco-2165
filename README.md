@@ -60,42 +60,42 @@ human-in-the-loop interrupt/resume via checkpointing.
                                           +-> :hold               (:hard? true)
 ```
 
-- `src/cartography/operation.cljc` — the **closed vocabulary** of operations.
+- `src/cartography/operation.kotoba` — the **closed vocabulary** of operations.
   `supported` is an allowlist; `reserved` names the operations that belong to
   the licensed surveyor. The Governor refuses anything outside both. Before
   this namespace existed the vocabulary was spread across the README, the
   Advisor's confidence table and a three-item forbidden list in the Governor,
   which made the Governor a *denylist* — measured on the pre-change tree, an
   op nobody had declared was admitted and written.
-- `src/cartography/facts.cljc` — well-formedness of the site record, the
+- `src/cartography/facts.kotoba` — well-formedness of the site record, the
   request and the proposal envelope. Provenance is a fact about the record,
   not about whether the store returned something; checking only the latter let
   a blank registration defeat the site invariant.
-- `src/cartography/phase.cljc` — the verdict → phase routing, extracted from
+- `src/cartography/phase.kotoba` — the verdict → phase routing, extracted from
   the actor's `:decide` node so it can be tested without building a graph.
   `:hard?` is checked before `:escalate?`, because escalating a hard-blocked
   proposal would ask a human to authorise something no one may authorise.
-- `src/cartography/ledger.cljc` — chained audit entries (`:ledger/seq`,
+- `src/cartography/ledger.kotoba` — chained audit entries (`:ledger/seq`,
   `:ledger/prev`, `:ledger/hash`) so an edited or reordered ledger is
   detectable, and `:approved-by` so a human-approved write is distinguishable
   from an automatic one. Truncation is **not** detectable without a signed
   head; that limit is asserted in the tests rather than left to be discovered.
-- `src/cartography/sim.cljc` — the governed-scenario harness (`clojure -M:sim`).
+- `src/cartography/sim.kotoba` — the governed-scenario harness (`clojure -M:sim`).
   It **exits non-zero when the scenario table demonstrated no refusal**: a
   governed actor's claim is that there exist actions it refuses, so a harness
   that ran only clean scenarios would print green having shown nothing.
-- `src/cartography/store.cljc` — `Store` protocol + `MemStore`:
+- `src/cartography/store.kotoba` — `Store` protocol + `MemStore`:
   registered sites/projects, committed survey records, an append-only audit
   ledger. Every append routes through `cartography.ledger/append`, which is
   what makes "append-only" a property of the artifact rather than of the code
   path that produced it.
-- `src/cartography/advisor.cljc` — `Advisor` protocol; `mock-advisor`
+- `src/cartography/advisor.kotoba` — `Advisor` protocol; `mock-advisor`
   (deterministic, default) proposes a field-survey or cartographic operation from a
   request; `llm-advisor` wraps a `langchain.model/ChatModel` — either
   way the advisor only ever produces a `:propose`-effect proposal,
   never a legal survey certification or licensed surveyor's sign-off, and LLM parse failures always yield
   `confidence 0.0` (forces escalation, never fabricated confidence).
-- `src/cartography/governor.cljc` — `CartographyGovernor/check`: a pure
+- `src/cartography/governor.kotoba` — `CartographyGovernor/check`: a pure
   function, wired as its own `:govern` node. Hard invariants
   (a request naming no site, an unregistered or unidentifiable site, an
   operation outside `cartography.operation/supported`, a proposal whose
@@ -109,7 +109,7 @@ human-in-the-loop interrupt/resume via checkpointing.
   (`actor/approve!`), matching the README's robotics-premise statement
   that binding surveyor authority always remains the
   professional surveyor's sole responsibility.
-- `src/cartography/actor.cljc` — `build-graph`, `run-request!`,
+- `src/cartography/actor.kotoba` — `build-graph`, `run-request!`,
   `approve!`: the `langgraph.graph/state-graph` wiring itself.
 
 ## Supported operations
