@@ -80,7 +80,7 @@ human-in-the-loop interrupt/resume via checkpointing.
   detectable, and `:approved-by` so a human-approved write is distinguishable
   from an automatic one. Truncation is **not** detectable without a signed
   head; that limit is asserted in the tests rather than left to be discovered.
-- `src/cartography/sim.kotoba` — the governed-scenario harness (`clojure -M:sim`).
+- `src/cartography/sim.kotoba` — the governed-scenario harness (`kbb -M:sim`).
   It **exits non-zero when the scenario table demonstrated no refusal**: a
   governed actor's claim is that there exist actions it refuses, so a harness
   that ran only clean scenarios would print green having shown nothing.
@@ -124,9 +124,9 @@ Governor refuses any operation absent from it. All proposals carry
 `:effect :propose` (enforcement: Governor.hard-violations).
 
 ```bash
-clojure -M:test   # unit + end-to-end, including the controls that show each refusal bites
-clojure -M:sim    # run the governed scenarios; exits 1 if none were refused
-clojure -M:lint
+kbb -M:test   # unit + end-to-end, including the controls that show each refusal bites
+kbb -M:sim    # run the governed scenarios; exits 1 if none were refused
+kbb -M:lint
 ```
 
 This is what backs this repo's `:maturity :implemented` entry in
