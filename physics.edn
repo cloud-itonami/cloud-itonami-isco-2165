@@ -1,0 +1,33 @@
+;; What this vertical's robot physically does, declared for
+;; kotoba.robotics.process (kotoba-lang/robotics). `kbb -M:physics` runs it.
+;;
+;; README "Robotics premise": a cartography-support robot records field
+;; survey data, drafts map/GIS products and schedules site visits for
+;; cartographers and surveyors (ISCO 2165). The physical work: a survey rover
+;; carrying the instrument across terrain between control points, and raising
+;; the total station onto its tripod.
+;;
+;; Every number without a cited source is marked `estimate` in its :basis.
+;; Replacing an estimate with a sourced value is this bot's growth work.
+{:physics/schema "itonami.physical-ai.spec.v1"
+ :repo "cloud-itonami/cloud-itonami-isco-2165"
+ :cases
+ [{:id :rover-terrain-leg
+   :kind :transport
+   :procedure "survey rover carries the GNSS receiver 100 m between control points over ground of varying softness"
+   :params {:mass-kg 40.0 :payload-kg 10.0 :distance-m 100.0 :v-max-mps 1.0 :a-max-mps2 0.5
+            :brake-decel-mps2 1.0 :drive-force-n 80.0
+            :cog-height-m 0.4 :support-half-length-m 0.3}
+   :sweep {:param :crr :values [0.02 0.05 0.10 0.13 0.15]}
+   :quantity :cycle-time-s
+   :limit {:max 200.0 :basis "estimate: survey plan allows about 3 minutes per 100 m leg"}
+   :boundary {:lo 0.01 :hi 0.3}}
+  {:id :total-station-to-tripod
+   :kind :manipulator
+   :procedure "arm lifts the total station from its case on the ground up onto the tripod head"
+   :params {:l1-m 0.55 :l2-m 0.50 :m1-kg 4.0 :m2-kg 3.0
+            :from [0.40 -0.50] :to [0.50 0.45] :duration-s 3.0 :steps 500}
+   :sweep {:param :payload-kg :values [3.0 5.0 7.0 9.0 12.0]}
+   :quantity :peak-tau1-nm
+   :limit {:max 80.0 :basis "estimate: continuous shoulder torque of a mid-size collaborative arm (~7 kg payload class)"}
+   :boundary {:lo 0.5 :hi 30.0}}]}
