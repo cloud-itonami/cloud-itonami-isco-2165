@@ -4,7 +4,7 @@
   `:govern` node in `cartography.actor`'s StateGraph, downstream of
   `:advise` — the Advisor has no notion of site/project provenance or
   boundary-determination risk, so this MUST be a separate system able to
-  reject a proposal (itonami actor pattern, per ADR-2607011000 / CLAUDE.md
+  reject a proposal (itonami actor pattern, per ADR-2607011000 / AGENTS.md
   Actors section).
 
   `check` is a pure function of (request, context, proposal, store) ->
